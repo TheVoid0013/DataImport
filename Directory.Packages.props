@@ -1,0 +1,28 @@
+<Project>
+
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Data access -->
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
+
+		<!-- Hosting / configuration -->
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
+
+		<!-- Logging -->
+		<PackageVersion Include="Serilog" Version="4.0.2" />
+		<PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
+		<PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
+
+		<!-- Mediator pattern -->
+		<PackageVersion Include="MediatR" Version="12.4.1" />
+	</ItemGroup>
+
+</Project>
