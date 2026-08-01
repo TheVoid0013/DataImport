@@ -18,7 +18,7 @@ namespace DataImport.Models
         [StringLength(100)]
         public string RecordUniqueId { get; set; } = null!;
 
-        [StringLength(25)]
+        [StringLength(100)]
         public string? Country { get; set; }
 
         public string? XmlRecord { get; set; }
