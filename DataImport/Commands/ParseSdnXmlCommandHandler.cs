@@ -27,9 +27,6 @@ namespace DataImport.Commands
 
         public Task<List<SanctionDetail>> Handle(ParseSdnXmlCommand request, CancellationToken cancellationToken)
         {
-            // TEMPORARY — added to check if my email notification path is working correctly.
-            //throw new InvalidOperationException("TEST: forced failure to verify email notification path");
-
             _logger.LogInformation("Parsing SDN XML ({Length} bytes)...", request.RawXml.Length);
 
             var doc = XDocument.Load(request.RawXml);
@@ -50,9 +47,25 @@ namespace DataImport.Commands
                                     .Element(Ns + "country")?
                                     .Value;
 
+                var sdnType = entry.Element(Ns + "sdnType")?.Value;
+                var lastName = entry.Element(Ns + "lastName")?.Value;
+                var firstName = entry.Element(Ns + "firstName")?.Value; 
+
+                if (string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(sdnType))
+                {
+                    // Both are required by OFAC's schema. If either is missing, this entry
+                    // is malformed — skip it rather than let a NOT NULL violation blow up
+                    // the whole batch save later.
+                    _logger.LogWarning("Skipping sdnEntry {Uid} — missing required lastName or sdnType.", uid);
+                    continue;
+                }
+
                 results.Add(new SanctionDetail
                 {
                     RecordUniqueId = uid,
+                    SdnType = sdnType,
+                    LastName = lastName,
+                    FirstName = firstName, 
                     Country = country,
                     XmlRecord = entry.ToString(SaveOptions.DisableFormatting)
                 });
