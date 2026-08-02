@@ -10,6 +10,8 @@ namespace DataImport.Data
     {
         public DbSet<SanctionDetail> SanctionDetails => Set<SanctionDetail>();
 
+        public DbSet<DataImportLog> DataImportLogs => Set<DataImportLog>();
+
 
         public SanctionsDbContext(DbContextOptions<SanctionsDbContext> options) : base(options)
         {
@@ -19,6 +21,7 @@ namespace DataImport.Data
         /// <summary>
         /// Learning: Always define the table name, along side the indexes at the model itself.
         /// For more undersatnding, look at the SanctionDetail model class.
+        /// The new models have also been defined with the table name and indexes.
         /// </summary>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,6 +34,14 @@ namespace DataImport.Data
                 entity.Property(e => e.ImportedAtUtc)
                       .IsRequired();
             });
+
+
+            modelBuilder.Entity<DataImportLog>(entity =>
+            {
+                entity.Property(e => e.RanAtUtc)
+                      .IsRequired();
+            });
+
         }
      }
 }

@@ -14,9 +14,12 @@ namespace DataImport.Commands
     /// being materialized as one in-memory string. Callers are responsible for
     /// disposing the returned stream.
     /// </summary>
-    public record DownloadSdnXmlCommand : IRequest<Stream>;
+    public record SdnXmlDownloadResult(Stream Content, bool WasDownloaded);
+    public record DownloadSdnXmlCommand : IRequest<SdnXmlDownloadResult>;
 
-    public class DownloadSdnXmlCommandHandler : IRequestHandler<DownloadSdnXmlCommand, Stream>
+
+
+    public class DownloadSdnXmlCommandHandler : IRequestHandler<DownloadSdnXmlCommand, SdnXmlDownloadResult>
     {
         private const string CachedFileName = "sdn.xml";
 
@@ -34,14 +37,17 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
-        public async Task<Stream> Handle(DownloadSdnXmlCommand request, CancellationToken cancellationToken)
+        public async Task<SdnXmlDownloadResult> Handle(DownloadSdnXmlCommand request, CancellationToken cancellationToken)
         {
             var todayFolder = GetTodayFolder();
             var cachedFilePath = Path.Combine(todayFolder, CachedFileName);
 
+            bool wasDownloaded;
+
             if (File.Exists(cachedFilePath))
             {
                 _logger.LogInformation("Using cached SDN.XML from {Path}", cachedFilePath);
+                wasDownloaded = false;
             }
             else
             {
@@ -49,18 +55,21 @@ namespace DataImport.Commands
                 Directory.CreateDirectory(todayFolder);
                 await DownloadToFileAsync(cachedFilePath, cancellationToken);
                 _logger.LogInformation("Cached download to {Path}", cachedFilePath);
+                wasDownloaded = true;
             }
 
             // FileOptions.SequentialScan hints to the OS that we'll read this
             // file start-to-end once, which is exactly what an XmlReader does —
             // it enables more aggressive read-ahead caching for this access pattern.
-            return new FileStream(
+            var stream = new FileStream(
                 cachedFilePath,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read,
                 bufferSize: 4096,
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+            return new SdnXmlDownloadResult(stream, wasDownloaded);
         }
 
         /// <summary>
