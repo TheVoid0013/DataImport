@@ -23,6 +23,9 @@
 
 		<!-- Mediator pattern -->
 		<PackageVersion Include="MediatR" Version="12.4.1" />
+
+		<!-- Benchmarking -->
+		<PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
 	</ItemGroup>
 
 </Project>

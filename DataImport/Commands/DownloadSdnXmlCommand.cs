@@ -6,12 +6,17 @@ using Microsoft.Extensions.Options;
 namespace DataImport.Commands
 {
     /// <summary>
-    /// Gets the raw SDN.XML content — from today's cache folder if it's
-    /// already there, otherwise downloads it from OFAC and caches it.
+    /// Gets the raw SDN.XML content as a stream — from today's cache folder if
+    /// it's already there, otherwise downloads it from OFAC and caches it.
+    ///
+    /// Returns a Stream rather than a string so callers (e.g. an XmlReader-based
+    /// parser) can process the document without the whole multi-MB file ever
+    /// being materialized as one in-memory string. Callers are responsible for
+    /// disposing the returned stream.
     /// </summary>
-    public record DownloadSdnXmlCommand : IRequest<string>;
+    public record DownloadSdnXmlCommand : IRequest<Stream>;
 
-    public class DownloadSdnXmlCommandHandler : IRequestHandler<DownloadSdnXmlCommand, string>
+    public class DownloadSdnXmlCommandHandler : IRequestHandler<DownloadSdnXmlCommand, Stream>
     {
         private const string CachedFileName = "sdn.xml";
 
@@ -29,7 +34,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
-        public async Task<string> Handle(DownloadSdnXmlCommand request, CancellationToken cancellationToken)
+        public async Task<Stream> Handle(DownloadSdnXmlCommand request, CancellationToken cancellationToken)
         {
             var todayFolder = GetTodayFolder();
             var cachedFilePath = Path.Combine(todayFolder, CachedFileName);
@@ -37,24 +42,40 @@ namespace DataImport.Commands
             if (File.Exists(cachedFilePath))
             {
                 _logger.LogInformation("Using cached SDN.XML from {Path}", cachedFilePath);
-                return await File.ReadAllTextAsync(cachedFilePath, cancellationToken);
+            }
+            else
+            {
+                _logger.LogInformation("No cache found for today — downloading from {Url}", _importSettings.SdnXmlUrl);
+                Directory.CreateDirectory(todayFolder);
+                await DownloadToFileAsync(cachedFilePath, cancellationToken);
+                _logger.LogInformation("Cached download to {Path}", cachedFilePath);
             }
 
-            _logger.LogInformation("No cache found for today — downloading from {Url}", _importSettings.SdnXmlUrl);
-            var xml = await DownloadAsync(cancellationToken);
-
-            Directory.CreateDirectory(todayFolder);
-            await File.WriteAllTextAsync(cachedFilePath, xml, cancellationToken);
-            _logger.LogInformation("Cached download to {Path}", cachedFilePath);
-
-            return xml;
+            // FileOptions.SequentialScan hints to the OS that we'll read this
+            // file start-to-end once, which is exactly what an XmlReader does —
+            // it enables more aggressive read-ahead caching for this access pattern.
+            return new FileStream(
+                cachedFilePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 4096,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
 
-        private async Task<string> DownloadAsync(CancellationToken cancellationToken)
+        /// <summary>
+        /// Streams the HTTP response body directly to disk. Response headers are
+        /// read as soon as they arrive (HttpCompletionOption.ResponseHeadersRead)
+        /// so the body itself is never buffered into memory by HttpClient before
+        /// we start writing it out — the bytes flow straight from the network
+        /// socket to the file.
+        /// </summary>
+        private async Task DownloadToFileAsync(string destinationPath, CancellationToken cancellationToken)
         {
             var client = _httpClientFactory.CreateClient(nameof(DownloadSdnXmlCommandHandler));
 
-            using var response = await client.GetAsync(_importSettings.SdnXmlUrl, cancellationToken);
+            using var response = await client.GetAsync(
+                _importSettings.SdnXmlUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -67,7 +88,12 @@ namespace DataImport.Commands
                     $"Failed to download SDN.XML: {(int)response.StatusCode} {response.ReasonPhrase}");
             }
 
-            return await response.Content.ReadAsStringAsync(cancellationToken);
+            await using var httpStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var fileStream = new FileStream(
+                destinationPath, FileMode.Create, FileAccess.Write, FileShare.None,
+                bufferSize: 81920, FileOptions.Asynchronous);
+
+            await httpStream.CopyToAsync(fileStream, cancellationToken);
         }
 
         private string GetTodayFolder()
