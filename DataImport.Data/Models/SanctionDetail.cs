@@ -8,6 +8,7 @@ using System.Text;
 namespace DataImport.Data.Models
 {
     [Index(nameof(RecordUniqueId), IsUnique = true)]
+    [Index(nameof(SdnType), nameof(LastName))]
     [Table("SanctionDetails")]
     public class SanctionDetail
     {
@@ -24,5 +25,17 @@ namespace DataImport.Data.Models
         public string? XmlRecord { get; set; }
 
         public DateTime ImportedAtUtc { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        [StringLength(350)]
+        public string LastName { get; set; } = null!;
+
+        [StringLength(350)]
+        public string? FirstName { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string SdnType { get; set; } = null!;
+
     }
 }
