@@ -38,6 +38,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
-namespace DataImport.Data
+namespace DataImport.Data.Data
 {
     public class SanctionsDbContextFactory : IDesignTimeDbContextFactory<SanctionsDbContext>
     {

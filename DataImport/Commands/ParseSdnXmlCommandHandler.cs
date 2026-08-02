@@ -1,5 +1,5 @@
 ﻿using System.Xml.Linq;
-using DataImport.Models;
+using DataImport.Data.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

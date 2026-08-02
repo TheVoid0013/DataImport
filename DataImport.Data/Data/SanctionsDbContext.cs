@@ -1,10 +1,10 @@
-﻿using DataImport.Models;
+﻿using DataImport.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DataImport.Data
+namespace DataImport.Data.Data
 {
     public class SanctionsDbContext : DbContext
     {

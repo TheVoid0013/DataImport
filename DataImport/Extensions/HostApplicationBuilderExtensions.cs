@@ -1,6 +1,7 @@
 ﻿using DataImport.Commands;
 using DataImport.Configuration;
-using DataImport.Data;
+using DataImport.Data.Models;
+using DataImport.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

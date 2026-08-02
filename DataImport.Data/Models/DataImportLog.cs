@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace DataImport.Models
+namespace DataImport.Data.Models
 {
     [Table("DataImportLogs")]
     [Index(nameof(RanAtUtc))]

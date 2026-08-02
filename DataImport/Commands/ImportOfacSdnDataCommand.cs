@@ -1,5 +1,5 @@
-﻿using DataImport.Data;
-using DataImport.Models;
+﻿using DataImport.Data.Data;
+using DataImport.Data.Models;
 using DataImport.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;

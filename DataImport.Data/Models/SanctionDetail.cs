@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace DataImport.Models
+namespace DataImport.Data.Models
 {
     [Index(nameof(RecordUniqueId), IsUnique = true)]
     [Table("SanctionDetails")]
