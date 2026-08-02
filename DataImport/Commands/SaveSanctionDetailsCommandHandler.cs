@@ -49,11 +49,18 @@ namespace DataImport.Commands
                 {
                     if (existingByUid.TryGetValue(record.RecordUniqueId, out var existingRecord))
                     {
-                        if (existingRecord.XmlRecord != record.XmlRecord || existingRecord.Country != record.Country)
+                        if (existingRecord.XmlRecord != record.XmlRecord
+                            || existingRecord.Country != record.Country
+                            || existingRecord.LastName != record.LastName
+                            || existingRecord.FirstName != record.FirstName
+                            || existingRecord.SdnType != record.SdnType)
                         {
                             existingRecord.XmlRecord = record.XmlRecord;
                             existingRecord.Country = record.Country;
                             existingRecord.ImportedAtUtc = DateTime.UtcNow;
+                            existingRecord.LastName = record.LastName;
+                            existingRecord.FirstName = record.FirstName;
+                            existingRecord.SdnType = record.SdnType;
 
                             _db.Attach(existingRecord);
                             _db.Entry(existingRecord).State = EntityState.Modified;
