@@ -30,12 +30,15 @@ namespace DataImport.Commands
 
         public async Task<SaveSanctionDetailsResult> Handle(SaveSanctionDetailsCommand request, CancellationToken cancellationToken)
         {
-            // Load every existing RecordUniqueId/XmlRecord/Country up front instead of
-            // filtering with a huge `WHERE RecordUniqueId IN (...18000 values...)`,
-            // which is what was actually timing out. The SDN table is only ~15-20k
-            // rows, so pulling it all is cheap and avoids the parameter explosion.
+            _logger.LogInformation("Loading existing SDN records for comparison...");
+
             var existingByUid = await _db.SanctionDetails
+                .AsNoTracking()
                 .ToDictionaryAsync(d => d.RecordUniqueId, cancellationToken);
+
+            _logger.LogInformation("Loaded {Count} existing records.", existingByUid.Count);
+
+            _db.ChangeTracker.AutoDetectChangesEnabled = false;
 
             int inserted = 0, updated = 0, unchanged = 0;
             var processed = 0;
@@ -51,6 +54,10 @@ namespace DataImport.Commands
                             existingRecord.XmlRecord = record.XmlRecord;
                             existingRecord.Country = record.Country;
                             existingRecord.ImportedAtUtc = DateTime.UtcNow;
+
+                            _db.Attach(existingRecord);
+                            _db.Entry(existingRecord).State = EntityState.Modified;
+
                             updated++;
                         }
                         else
@@ -66,6 +73,7 @@ namespace DataImport.Commands
                 }
 
                 await _db.SaveChangesAsync(cancellationToken);
+                _db.ChangeTracker.Clear();
 
                 processed += batch.Length;
                 _logger.LogInformation("Saved {Processed}/{Total} records...", processed, request.Records.Count);

@@ -8,7 +8,7 @@ namespace DataImport.Commands
     /// <summary>
     /// Parses raw SDN.XML into individual SanctionDetail records — one per &lt;sdnEntry&gt;.
     /// </summary>
-    public record ParseSdnXmlCommand(string RawXml) : IRequest<List<SanctionDetail>>;
+    public record ParseSdnXmlCommand(Stream RawXml) : IRequest<List<SanctionDetail>>;
 
     public class ParseSdnXmlCommandHandler : IRequestHandler<ParseSdnXmlCommand, List<SanctionDetail>>
     {
@@ -29,7 +29,7 @@ namespace DataImport.Commands
         {
             _logger.LogInformation("Parsing SDN XML ({Length} bytes)...", request.RawXml.Length);
 
-            var doc = XDocument.Parse(request.RawXml);
+            var doc = XDocument.Load(request.RawXml);
 
             var results = new List<SanctionDetail>();
 
