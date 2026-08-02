@@ -1,14 +1,11 @@
 ﻿using DataImport.Data;
 using DataImport.Models;
+using DataImport.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace DataImport.Commands
 {
-    /// <summary>
-    /// Orchestrates a full OFAC SDN import: download, parse, save.
-    /// This is the one you actually send from Program.cs / your scheduled entry point.
-    /// </summary>
     public record ImportOfacSdnDataCommand : IRequest<ImportOfacSdnDataResult>;
 
     public record ImportOfacSdnDataResult(int TotalParsed, int Inserted, int Updated, int Unchanged);
@@ -18,20 +15,24 @@ namespace DataImport.Commands
         private readonly IMediator _mediator;
         private readonly SanctionsDbContext _db;
         private readonly ILogger<ImportOfacSdnDataCommandHandler> _logger;
+        private readonly IImportFailureNotifier _notifier;
 
         public ImportOfacSdnDataCommandHandler(
             IMediator mediator,
             SanctionsDbContext db,
-            ILogger<ImportOfacSdnDataCommandHandler> logger)
+            ILogger<ImportOfacSdnDataCommandHandler> logger,
+            IImportFailureNotifier notifier)
         {
             _mediator = mediator;
             _db = db;
             _logger = logger;
+            _notifier = notifier;
         }
 
         public async Task<ImportOfacSdnDataResult> Handle(ImportOfacSdnDataCommand request, CancellationToken cancellationToken)
         {
             var log = new DataImportLog { RanAtUtc = DateTime.UtcNow };
+            Exception? capturedException = null;
 
             try
             {
@@ -41,7 +42,6 @@ namespace DataImport.Commands
                 }
                 catch (Exception ex)
                 {
-                    // even if Cache cleaning fails, the show must go on. 
                     _logger.LogWarning(ex, "Cache cleanup failed; import will continue.");
                 }
 
@@ -66,12 +66,19 @@ namespace DataImport.Commands
             {
                 log.Succeeded = false;
                 log.ErrorMessage = ex.Message;
+                capturedException = ex;
                 throw;
             }
             finally
             {
                 _db.DataImportLogs.Add(log);
                 await _db.SaveChangesAsync(cancellationToken);
+
+                if (!log.Succeeded && capturedException is not null)
+                {
+                    // Fire-and-forget-safe: notifier swallows its own exceptions internally.
+                    await _notifier.NotifyAsync("OFAC SDN Import", capturedException, cancellationToken);
+                }
             }
         }
     }

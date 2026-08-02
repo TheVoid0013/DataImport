@@ -27,6 +27,9 @@ namespace DataImport.Commands
 
         public Task<List<SanctionDetail>> Handle(ParseSdnXmlCommand request, CancellationToken cancellationToken)
         {
+            // TEMPORARY — added to check if my email notification path is working correctly.
+            //throw new InvalidOperationException("TEST: forced failure to verify email notification path");
+
             _logger.LogInformation("Parsing SDN XML ({Length} bytes)...", request.RawXml.Length);
 
             var doc = XDocument.Load(request.RawXml);

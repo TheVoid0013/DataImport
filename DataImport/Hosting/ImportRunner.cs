@@ -59,6 +59,7 @@ internal static class ImportRunner
             .AddImportSettings()
             .AddSdnDownloadHttpClient()
             .AddImportMediatR()
+            .AddEmailNotifications()   // registers EmailOptions + IImportFailureNotifier for DI
             .UseSerilogLogging();
 
         return builder.Build();
