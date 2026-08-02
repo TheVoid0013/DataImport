@@ -1,6 +1,7 @@
 ﻿using DataImport.Data;
 using DataImport.Models;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace DataImport.Commands
 {
@@ -16,11 +17,16 @@ namespace DataImport.Commands
     {
         private readonly IMediator _mediator;
         private readonly SanctionsDbContext _db;
+        private readonly ILogger<ImportOfacSdnDataCommandHandler> _logger;
 
-        public ImportOfacSdnDataCommandHandler(IMediator mediator, SanctionsDbContext db)
+        public ImportOfacSdnDataCommandHandler(
+            IMediator mediator,
+            SanctionsDbContext db,
+            ILogger<ImportOfacSdnDataCommandHandler> logger)
         {
             _mediator = mediator;
             _db = db;
+            _logger = logger;
         }
 
         public async Task<ImportOfacSdnDataResult> Handle(ImportOfacSdnDataCommand request, CancellationToken cancellationToken)
@@ -29,6 +35,16 @@ namespace DataImport.Commands
 
             try
             {
+                try
+                {
+                    await _mediator.Send(new CleanupImportCacheCommand(), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    // even if Cache cleaning fails, the show must go on. 
+                    _logger.LogWarning(ex, "Cache cleanup failed; import will continue.");
+                }
+
                 var download = await _mediator.Send(new DownloadSdnXmlCommand(), cancellationToken);
                 log.WasDownloaded = download.WasDownloaded;
 
