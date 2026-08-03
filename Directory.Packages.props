@@ -40,6 +40,10 @@
 
 		<!-- Benchmarking -->
 		<PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+
+		<!--Facets-->
+		<PackageVersion Include="Facet" Version="5.1.11" />
+		<PackageVersion Include="Facet.Extensions.EFCore" Version="5.1.11" />
 	</ItemGroup>
 
 </Project>

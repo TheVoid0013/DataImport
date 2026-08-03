@@ -34,4 +34,8 @@
 		<ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Controllers\" />
+	</ItemGroup>
+
 </Project>
