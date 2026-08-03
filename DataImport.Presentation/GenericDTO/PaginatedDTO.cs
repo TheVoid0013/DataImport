@@ -1,4 +1,6 @@
-﻿namespace DataImport.Api.Dtos
+﻿using Facet.Extensions;
+
+namespace DataImport.Presentation.GenericDTO
 {
  
     /// <summary>

@@ -28,14 +28,13 @@
 		<PackageReference Include="Scrutor" />
 
 		<PackageReference Include="Swashbuckle.AspNetCore" />
+
+		<PackageReference Include="MediatR" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Controllers\" />
+		<ProjectReference Include="..\DataImport.Presentation\DataImport.Presentation.csproj" />
 	</ItemGroup>
 
 </Project>

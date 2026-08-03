@@ -1,5 +1,6 @@
 ﻿using DataImport.Data.Models;
 using Facet;
+using Facet.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
