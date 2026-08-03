@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Facet" />
+		<PackageReference Include="Facet.Extensions.EFCore" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
+	</ItemGroup>
+
+</Project>
