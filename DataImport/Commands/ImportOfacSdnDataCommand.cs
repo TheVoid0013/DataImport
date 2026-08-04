@@ -45,12 +45,20 @@ namespace DataImport.Commands
                     _logger.LogWarning(ex, "Cache cleanup failed; import will continue.");
                 }
 
+
                 var download = await _mediator.Send(new DownloadSdnXmlCommand(), cancellationToken);
                 log.WasDownloaded = download.WasDownloaded;
 
                 await using var rawXml = download.Content;
 
-                var records = await _mediator.Send(new ParseSdnXmlCommand(rawXml), cancellationToken);
+                var validatedStream = await _mediator.Send(
+                        new LoadAndValidateSdnXmlCommand(rawXml),
+                        cancellationToken);
+
+                var records = await _mediator.Send(
+                    new ParseSdnXmlCommand(validatedStream),
+                    cancellationToken);
+
 
                 var saveResult = await _mediator.Send(new SaveSanctionDetailsCommand(records), cancellationToken);
 
