@@ -1,14 +1,27 @@
-# DataImport — OFAC SDN Importer
+# DataImport — OFAC SDN Sanctions Platform
 
-A .NET console job that downloads the U.S. Treasury OFAC Specially Designated
-Nationals (SDN) list, parses it, and upserts it into a SQL Server database —
-inserting new entries, updating changed ones, and leaving unchanged ones alone.
+A .NET solution for ingesting and serving U.S. Treasury OFAC Specially
+Designated Nationals (SDN) sanctions data. It's made up of two projects
+sharing the same SQL Server database and domain models:
+
+| Project | Type | Responsibility |
+|---|---|---|
+| **DataImport** | Console app | Downloads, parses, and upserts SDN data (ETL) |
+| **DataImport.API** | ASP.NET Core Web API | Exposes import logs / data via REST endpoints |
+
+---
+
+## 1. DataImport — Console Importer
+
+A .NET console job that downloads the OFAC SDN list, parses it, and upserts
+it into SQL Server — inserting new entries, updating changed ones, and
+leaving unchanged ones alone. Runs as a scheduled job via Task Scheduler.
 
 Built as a MediatR-orchestrated pipeline of three steps: **download → parse → save**,
 with every run recorded in a `DataImportLogs` table so you have a history of what
 happened, when, and whether it succeeded.
 
-## How it works
+### How it works
 
 ```
 Program.cs
@@ -40,7 +53,10 @@ Program.cs
    failure — capturing counts, whether the source was downloaded or cached,
    success/failure, and the error message if any.
 
-## Project structure
+5. **Cache cleanup** — stale day-partitioned cache folders are cleaned up
+   automatically so `Imports/` doesn't grow unbounded across repeated runs.
+
+### Project structure
 
 | Folder | Contents |
 |---|---|
@@ -54,97 +70,35 @@ Program.cs
 | `Migrations/` | EF Core migrations |
 | `DataImport.Benchmarks/` | BenchmarkDotNet project comparing SDN parsing/save approaches |
 
-## Requirements
+---
 
-- .NET 10 SDK
-- SQL Server (local or remote) — Developer/Express/etc. all work
-- Network access to the OFAC SDN.XML endpoint
+## 2. DataImport.API — Web App
 
-## Setup
+An ASP.NET Core Web API that exposes the data captured by the importer —
+currently import run logs, with paged retrieval and error-count reporting —
+over REST endpoints. Built on the same MediatR command/query pattern as the
+importer, against the same `SanctionsDbContext` / SQL Server database.
+Documented via Swagger/OpenAPI for exploration and downstream integration.
 
-1. **Clone and restore**
-   ```bash
-   git clone https://github.com/TheVoid0013/DataImport.git
-   cd DataImport
-   dotnet restore
-   ```
+### Endpoints (current)
 
-2. **Configure `DataImport/appsettings.json`**
-   ```json
-   {
-     "ConnectionStrings": {
-       "SanctionsDb": "Server=localhost;Database=SanctionsImporter;Trusted_Connection=True;TrustServerCertificate=True;"
-     },
-     "ImportSettings": {
-       "RootFolder": "Imports",
-       "SdnXmlUrl": "https://www.treasury.gov/ofac/downloads/sdn.xml"
-     }
-   }
-   ```
-   - `RootFolder` can be relative (resolved against the app's base directory)
-     or absolute.
-   - `SdnXmlUrl` is configurable since OFAC has changed/moved this file before —
-     no redeploy needed to point at a new URL.
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/api/logger` | Paged list of import runs (`page`, `pageSize`, `orderByDescending`) |
+| `GET` | `/api/logger/error-count` | Count of failed import runs |
 
-3. **Apply migrations**
-   ```bash
-   cd DataImport
-   dotnet ef database update
-   ```
+### Project structure
 
-4. **Run**
-   ```bash
-   dotnet run
-   ```
-
-## What gets stored
-
-**`SanctionDetails`** — one row per SDN entry, keyed by `RecordUniqueId`
-(unique index), storing the raw entry XML (`XmlRecord`), extracted `Country`,
-and `ImportedAtUtc`.
-
-**`DataImportLogs`** — one row per run:
-
-| Column | Meaning |
+| Folder | Contents |
 |---|---|
-| `RanAtUtc` | When the run started |
-| `Parsed` / `Inserted` / `Updated` / `Unchanged` | Result counts |
-| `WasDownloaded` | `true` if fetched from OFAC this run, `false` if served from today's cache |
-| `Succeeded` | Whether the run completed without throwing |
-| `ErrorMessage` | Populated when `Succeeded` is `false` |
+| `Controllers/` | REST endpoints (`LoggerController`, etc.) |
+| `Queries/` | MediatR query definitions (`GetQueriesPagedQuery`, `GetErrorCountQuery`) |
+| `Commands/` | MediatR query/command handlers |
+| `Presentation/GenericDTO/` | Shared response shapes (`PagedResult<T>`) and Facet-mapped DTOs |
 
-Indexed on `RanAtUtc` and on `(Succeeded, RanAtUtc)` for querying recent runs
-and recent failures efficiently.
+---
 
-## Operational notes
-
-- **Caching is per calendar day.** Re-running on the same day reuses the same
-  cached `sdn.xml` rather than re-downloading; a new day starts a fresh cache folder.
-- **Command timeout is set to 180s with retry-on-failure** (3 retries, up to
-  10s delay) at the DbContext level — see `AddSanctionsDbContext` in
-  `HostApplicationBuilderExtensions`. This is tuned for a modest dev/CI
-  environment; adjust if your SQL Server instance is under memory pressure
-  or shared with other heavy processes (see Troubleshooting below).
-- **The download HttpClient sets a 5-minute timeout and a custom User-Agent** —
-  treasury.gov rejects requests with no User-Agent header (403).
-
-## Troubleshooting
-
-- **`XmlException: Data at the root level is invalid`** — the downloaded/cached
-  file isn't valid XML. Check the cached `sdn.xml` for an HTML error page or
-  empty content; confirm the configured `SdnXmlUrl` is still correct.
-- **SQL timeouts or "insufficient memory in the buffer pool" during the
-  initial load in `SaveSanctionDetailsCommandHandler`** — this is typically
-  resource contention on the machine running SQL Server (e.g. running
-  low on RAM with Visual Studio, browser, SSMS all open simultaneously),
-  not a code or hardware defect. Check `sys.dm_os_sys_memory` and available
-  RAM; consider running the job outside the debugger for scheduled/production runs.
-- **Updates seem to run but don't persist** — make sure any record fetched
-  for comparison via `AsNoTracking()` is explicitly `Attach`ed and marked
-  `EntityState.Modified` before `SaveChangesAsync()`; an untracked entity's
-  mutated properties won't generate an `UPDATE` on their own.
-
-## Benchmarks
+## 3. Benchmarks
 
 `DataImport.Benchmarks` uses BenchmarkDotNet to compare parsing/save strategy
 approaches. Run with:
@@ -153,4 +107,12 @@ cd DataImport.Benchmarks
 dotnet run -c Release
 ```
 ____
+
+## Requirements
+
+- .NET 10 SDK
+- SQL Server (local or remote) — Developer/Express/etc. all work
+- Network access to the OFAC SDN.XML endpoint (importer only)
+
+
 ### If you want to contribute, create descriptive pull request and let me know.
