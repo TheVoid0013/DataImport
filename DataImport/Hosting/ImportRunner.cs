@@ -15,9 +15,11 @@ namespace DataImport.Hosting;
 /// </summary>
 internal static class ImportRunner
 {
+    private const int MaxAttempts = 3;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(1);
+
     public static async Task<int> RunAsync(string[] args)
     {
-        // Configure Serilog before the host builds, so even startup failures get logged.
         SerilogBootstrapper.Initialize();
 
         try
@@ -25,9 +27,9 @@ internal static class ImportRunner
             Log.Information("=== OFAC SDN import starting ===");
 
             using var host = BuildHost(args);
-
             var mediator = host.Services.GetRequiredService<IMediator>();
-            var result = await mediator.Send(new ImportOfacSdnDataCommand());
+
+            var result = await RunWithRetryAsync(mediator);
 
             Log.Information(
                 "Import complete. Parsed: {Parsed}, Inserted: {Inserted}, Updated: {Updated}, Unchanged: {Unchanged}",
@@ -38,16 +40,37 @@ internal static class ImportRunner
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "OFAC SDN import failed");
+            Log.Fatal(ex, "OFAC SDN import failed after {MaxAttempts} attempt(s)", MaxAttempts);
             return 1;
         }
         finally
         {
-            // Flushes buffered log events to disk/console before the process exits.
-            // Skipping this can silently drop the last few log lines, including the
-            // one that would have told you why it failed.
             await Log.CloseAndFlushAsync();
         }
+    }
+
+    private static async Task<ImportOfacSdnDataResult> RunWithRetryAsync(IMediator mediator)
+    {
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            try
+            {
+                return await mediator.Send(new ImportOfacSdnDataCommand());
+            }
+            catch (Exception ex) when (attempt < MaxAttempts)
+            {
+                Log.Warning(ex,
+                    "Import attempt {Attempt}/{MaxAttempts} failed. Retrying in {Delay}...",
+                    attempt, MaxAttempts, RetryDelay);
+
+                await Task.Delay(RetryDelay);
+            }
+        }
+
+        // Unreachable in practice: the loop either returns or the last attempt's
+        // exception propagates naturally since the `when (attempt < MaxAttempts)`
+        // filter won't catch on the final try.
+        throw new InvalidOperationException("Retry loop exited unexpectedly.");
     }
 
     private static IHost BuildHost(string[] args)
@@ -59,7 +82,7 @@ internal static class ImportRunner
             .AddImportSettings()
             .AddSdnDownloadHttpClient()
             .AddImportMediatR()
-            .AddEmailNotifications()   // registers EmailOptions + IImportFailureNotifier for DI
+            .AddEmailNotifications()
             .UseSerilogLogging();
 
         return builder.Build();
