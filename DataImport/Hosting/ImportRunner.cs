@@ -16,7 +16,7 @@ namespace DataImport.Hosting;
 internal static class ImportRunner
 {
     private const int MaxAttempts = 3;
-    private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(15);
 
     public static async Task<int> RunAsync(string[] args)
     {
