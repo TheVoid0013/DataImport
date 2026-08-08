@@ -9,10 +9,10 @@ namespace DataImport.Data.Data
         public SanctionsDbContext CreateDbContext(string[] args)
         {
             var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.Development.json", optional: true)
                 .Build();
-
             var connectionString = configuration.GetConnectionString("SanctionsDb");
 
             var optionsBuilder = new DbContextOptionsBuilder<SanctionsDbContext>();
