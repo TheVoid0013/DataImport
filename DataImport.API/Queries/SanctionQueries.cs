@@ -3,7 +3,7 @@ using DataImport.Presentation.GenericDTO;
 
 namespace DataImport.API.Queries;
 
-public record GetSanctionByIdQuery(Guid Id)
+public record GetSanctionByIdQuery(string Id)
     : IRequest<SanctionDetailDto?>;
 
 public record GetSanctionsPagedQuery(

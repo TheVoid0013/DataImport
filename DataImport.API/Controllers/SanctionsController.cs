@@ -15,8 +15,8 @@ namespace DataImport.API.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetSanctionByIdQuery(id), ct);
             return result is null ? NotFound() : Ok(result);

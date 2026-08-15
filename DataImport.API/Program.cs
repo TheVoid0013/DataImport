@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblyContaining<GetSanctionByIdQuery>());
+builder.Services.AddFusionCache(); 
 
 var app = builder.Build();
 

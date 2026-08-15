@@ -30,6 +30,8 @@
 		<PackageReference Include="Swashbuckle.AspNetCore" />
 
 		<PackageReference Include="MediatR" />
+
+		<PackageReference Include="ZiggyCreatures.FusionCache" />
 	</ItemGroup>
 
 	<ItemGroup>
