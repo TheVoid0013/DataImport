@@ -35,4 +35,21 @@ public class CountryController : ControllerBase
 
         return Ok(result);
     }
+    
+    [HttpPost]
+    [Route("get-sanctions-by-country")]
+    public async Task<IActionResult> GetCountrySanctionsPaged(
+        [FromQuery] GetCountrySanctionsPagedQuery request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new GetCountrySanctionsPagedQuery(request.country)
+            ,ct);
+ 
+        if (result is null || result.TotalCount == 0)
+            return NotFound();
+ 
+        return Ok(result);
+    }
+    
 }
