@@ -27,7 +27,7 @@ namespace DataImport.API.Controllers
                 new GetFreeTextSearchQuery(request.Name),
                 ct);
 
-            if (result is null || result.Count == 0)
+            if (result is null || result.TotalCount == 0)
                 return NotFound();
 
             return Ok(result);

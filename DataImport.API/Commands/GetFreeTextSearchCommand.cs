@@ -12,7 +12,7 @@ namespace DataImport.API.Commands;
 
 
 public class GetFreeTextSearchQueryHandler
-    : IRequestHandler<GetFreeTextSearchQuery, List<FreeTextSearchResultDto>>
+    : IRequestHandler<GetFreeTextSearchQuery, FreeTextSearchResponseDto>
 {
     private readonly SanctionsDbContext _db;
     private readonly IFusionCache _cache;
@@ -23,7 +23,7 @@ public class GetFreeTextSearchQueryHandler
         _cache = cache;
     }
 
-    public async Task<List<FreeTextSearchResultDto>> Handle(
+    public async Task<FreeTextSearchResponseDto> Handle(
         GetFreeTextSearchQuery request,
         CancellationToken ct)
     {
@@ -35,15 +35,14 @@ public class GetFreeTextSearchQueryHandler
             .ToArray();
 
         if (parts.Length == 0)
-            return new List<FreeTextSearchResultDto>();
+            return new FreeTextSearchResponseDto();
 
         var cacheKey = $"FreeTextSearch_OR_{string.Join("_", parts)}";
 
-        var results = await _cache.GetOrSetAsync<List<FreeTextSearchResultDto>>(
+        var response = await _cache.GetOrSetAsync<FreeTextSearchResponseDto>(
             cacheKey,
             async _ =>
             {
-                // Build: word1 in (First OR Last) OR word2 in (First OR Last) OR ...
                 var predicate = PredicateBuilder.New<SanctionDetail>(false);
                 foreach (var word in parts)
                 {
@@ -58,12 +57,28 @@ public class GetFreeTextSearchQueryHandler
                     .Where(predicate)
                     .ToListAsync(ct);
 
-                return matches.Select(r => r.ToFacet<FreeTextSearchResultDto>()).ToList();
+                return new FreeTextSearchResponseDto
+                {
+                    TotalCount = matches.Count,
+                    DistinctSdnTypes = matches
+                        .Select(m => m.SdnType.ToString())   // drop .ToString() if SdnType is already string
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .Distinct()
+                        .OrderBy(s => s)
+                        .ToList(),
+                    DistinctCountries = matches
+                        .Select(m => m.Country)              // drop .ToString() here too if already string
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .Distinct()
+                        .OrderBy(s => s)
+                        .ToList(),
+                    Results = matches.Select(r => r.ToFacet<FreeTextSearchResultDto>()).ToList()
+                };
             },
             options => options.SetDuration(TimeSpan.FromMinutes(5)),
             ct
         );
 
-        return results;
+        return response;
     }
 }

@@ -16,4 +16,4 @@ public record GetSanctionsPagedQuery(
 public record SearchRequest(string Name);
 
 
-public record GetFreeTextSearchQuery(string Name) : IRequest<List<FreeTextSearchResultDto>>;
+public record GetFreeTextSearchQuery(string Name) : IRequest<FreeTextSearchResponseDto>;
