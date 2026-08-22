@@ -1,12 +1,15 @@
 using DataImport.API.Queries;
 using DataImport.Data.Data;
+using DataImport.Data.Models;
 using DataImport.Presentation.GenericDTO;
 using Facet.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ZiggyCreatures.Caching.Fusion;
+using LinqKit;
 
 namespace DataImport.API.Commands;
+
 
 public class GetFreeTextSearchQueryHandler
     : IRequestHandler<GetFreeTextSearchQuery, List<FreeTextSearchResultDto>>
@@ -24,40 +27,40 @@ public class GetFreeTextSearchQueryHandler
         GetFreeTextSearchQuery request,
         CancellationToken ct)
     {
-        var cacheKey = $"FreeTextSearch_{request.Name.Trim().ToLowerInvariant()}";
+        var parts = request.Name
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim().ToLowerInvariant())
+            .Distinct()
+            .OrderBy(p => p)
+            .ToArray();
+
+        if (parts.Length == 0)
+            return new List<FreeTextSearchResultDto>();
+
+        var cacheKey = $"FreeTextSearch_OR_{string.Join("_", parts)}";
 
         var results = await _cache.GetOrSetAsync<List<FreeTextSearchResultDto>>(
             cacheKey,
             async _ =>
             {
-                var parts = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                var query = _db.SanctionDetails.AsNoTracking().AsQueryable();
-
-                if (parts.Length > 1)
+                // Build: word1 in (First OR Last) OR word2 in (First OR Last) OR ...
+                var predicate = PredicateBuilder.New<SanctionDetail>(false);
+                foreach (var word in parts)
                 {
-                    var first = parts[0];
-                    var last = parts[1];
-
-                    query = query.Where(s =>
-                        (EF.Functions.FreeText(s.FirstName!, first) && EF.Functions.FreeText(s.LastName, last))
-                        || (EF.Functions.FreeText(s.FirstName!, last) && EF.Functions.FreeText(s.LastName, first)));
-                }
-                else
-                {
-                    var term = request.Name;
-
-                    query = query.Where(s =>
-                        EF.Functions.FreeText(s.FirstName!, term)
-                        || EF.Functions.FreeText(s.LastName, term));
+                    var w = word;
+                    predicate = predicate.Or(s =>
+                        EF.Functions.FreeText(s.FirstName!, w) ||
+                        EF.Functions.FreeText(s.LastName, w));
                 }
 
-                var matches = await query.ToListAsync(ct);
+                var matches = await _db.SanctionDetails
+                    .AsNoTracking()
+                    .Where(predicate)
+                    .ToListAsync(ct);
+
                 return matches.Select(r => r.ToFacet<FreeTextSearchResultDto>()).ToList();
             },
-            options =>
-            {
-                options.SetDuration(TimeSpan.FromMinutes(5));
-            },
+            options => options.SetDuration(TimeSpan.FromMinutes(5)),
             ct
         );
 
