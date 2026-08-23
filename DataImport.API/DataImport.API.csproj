@@ -40,4 +40,8 @@
 		<ProjectReference Include="..\DataImport.Presentation\DataImport.Presentation.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Commands\Helper\" />
+	</ItemGroup>
+
 </Project>
