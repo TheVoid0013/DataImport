@@ -6,7 +6,9 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace DataImport.API.Commands;
 
-public class GetCountryCountQueryCommand : IRequestHandler<GetCountryCountQuery, object>
+public record CountryCountResult(bool Success, String Country, int Count);
+
+public class GetCountryCountQueryCommand : IRequestHandler<GetCountryCountQuery, CountryCountResult>
 {
     private readonly SanctionsDbContext _db;
     private readonly IFusionCache _cache;
@@ -17,11 +19,11 @@ public class GetCountryCountQueryCommand : IRequestHandler<GetCountryCountQuery,
         _cache = cache;
     }
 
-    public async Task<object> Handle(GetCountryCountQuery request, CancellationToken ct)
+    public async Task<CountryCountResult> Handle(GetCountryCountQuery request, CancellationToken ct)
     {
         var cacheKey = $"CountryCount_{request.country}";
 
-        return await _cache.GetOrSetAsync<object>(
+        return await _cache.GetOrSetAsync<CountryCountResult>(
             cacheKey,
             async _ =>
             {
@@ -29,12 +31,7 @@ public class GetCountryCountQueryCommand : IRequestHandler<GetCountryCountQuery,
                     .Where(x => x.Country == request.country.ToString())
                     .CountAsync(ct);
 
-                return new
-                {
-                    Success = true,
-                    Countrry = request.country,
-                    Count = count
-                };
+                return new CountryCountResult(true, request.country.ToString(), count);
             },
             options => options.SetDuration(TimeSpan.FromMinutes(5)),
             ct
