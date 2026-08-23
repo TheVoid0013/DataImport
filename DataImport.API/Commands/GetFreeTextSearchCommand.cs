@@ -10,29 +10,27 @@ using LinqKit;
 
 namespace DataImport.API.Commands;
 
-
 public class GetFreeTextSearchQueryHandler
     : IRequestHandler<GetFreeTextSearchQuery, FreeTextSearchResponseDto>
 {
     private readonly SanctionsDbContext _db;
     private readonly IFusionCache _cache;
+    private readonly IMediator _mediator;
 
-    public GetFreeTextSearchQueryHandler(SanctionsDbContext db, IFusionCache cache)
+    public GetFreeTextSearchQueryHandler(SanctionsDbContext db, IFusionCache cache, IMediator mediator)
     {
         _db = db;
         _cache = cache;
+        _mediator = mediator;
     }
 
     public async Task<FreeTextSearchResponseDto> Handle(
         GetFreeTextSearchQuery request,
         CancellationToken ct)
     {
-        var parts = request.Name
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Select(p => p.Trim().ToLowerInvariant())
-            .Distinct()
-            .OrderBy(p => p)
-            .ToArray();
+        // Seperate a Name into Multiple parts
+        // Also removes Noisy words to create a Better Result. 
+        var parts = await _mediator.Send(new SanitizeSearchTermsQuery(request.Name), ct);
 
         if (parts.Length == 0)
             return new FreeTextSearchResponseDto();
@@ -61,17 +59,19 @@ public class GetFreeTextSearchQueryHandler
                 {
                     TotalCount = matches.Count,
                     DistinctSdnTypes = matches
-                        .Select(m => m.SdnType.ToString())   // drop .ToString() if SdnType is already string
+                        .Select(m => m.SdnType)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Distinct()
                         .OrderBy(s => s)
                         .ToList(),
+                    
                     DistinctCountries = matches
-                        .Select(m => m.Country)              // drop .ToString() here too if already string
+                        .Select(m => m.Country)
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .Distinct()
                         .OrderBy(s => s)
                         .ToList(),
+                    
                     Results = matches.Select(r => r.ToFacet<FreeTextSearchResultDto>()).ToList()
                 };
             },

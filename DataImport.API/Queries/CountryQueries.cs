@@ -14,4 +14,5 @@ public record GetCountrySanctionsPagedQuery(
         int Page = 1
     ) : IRequest<PagedResult<SanctionListItemDto>>;
 
-public record GetCountryCountQuery(Country country): IRequest<object>;
+public record GetCountryCountQuery(Country country) : IRequest<DataImport.API.Commands.CountryCountResult>;
+
