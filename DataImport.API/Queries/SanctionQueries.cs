@@ -15,5 +15,5 @@ public record GetSanctionsPagedQuery(
 
 public record SearchRequest(string Name);
 
-
+// Added a normal Tolerance as it is not optimized yet.
 public record GetFreeTextSearchQuery(string Name, double Tolerance = 5.0) : IRequest<FreeTextSearchResponseDto>;
