@@ -7,7 +7,7 @@ sharing the same SQL Server database and domain models:
 | Project | Type | Responsibility |
 |---|---|---|
 | **DataImport** | Console app | Downloads, parses, and upserts SDN data (ETL) |
-| **DataImport.API** | ASP.NET Core Web API | Exposes import logs / data via REST endpoints |
+| **DataImport.API** | ASP.NET Core Web API | Exposes sanctions data, import logs, and search via REST endpoints |
 
 ---
 
@@ -75,15 +75,21 @@ Program.cs
 ## 2. DataImport.API — Web App
 
 An ASP.NET Core Web API that exposes the data captured by the importer —
-currently import run logs, with paged retrieval and error-count reporting —
-over REST endpoints. Built on the same MediatR command/query pattern as the
-importer, against the same `SanctionsDbContext` / SQL Server database.
-Documented via Swagger/OpenAPI for exploration and downstream integration.
+sanction records, import run logs, country-level breakdowns, and fuzzy
+name search — over REST endpoints. Built on the same MediatR command/query
+pattern as the importer, against the same `SanctionsDbContext` / SQL Server
+database. Documented via Swagger/OpenAPI for exploration and downstream
+integration.
 
 ### Endpoints (current)
 
 | Method | Route | Description |
 |---|---|---|
+| `GET` | `/api/sanctions` | Paged list of sanction records (`page`, `pageSize`, `sdnType`, `lastNameContains`) |
+| `GET` | `/api/sanctions/{id}` | Get a single sanction record by ID |
+| `POST` | `/api/Search` | Fuzzy name search over sanction records — SQL full-text candidate retrieval, re-ranked by n-gram cosine similarity (body: `{ "name": string }`) |
+| `POST` | `/api/Country/get-count-by-country` | Count of sanctioned records for a given country |
+| `POST` | `/api/Country/get-sanctions-by-country` | Paged list of sanction records for a given country (`page`, `pageSize`) |
 | `GET` | `/api/logger` | Paged list of import runs (`page`, `pageSize`, `orderByDescending`) |
 | `GET` | `/api/logger/error-count` | Count of failed import runs |
 
@@ -91,8 +97,8 @@ Documented via Swagger/OpenAPI for exploration and downstream integration.
 
 | Folder | Contents |
 |---|---|
-| `Controllers/` | REST endpoints (`LoggerController`, etc.) |
-| `Queries/` | MediatR query definitions (`GetQueriesPagedQuery`, `GetErrorCountQuery`) |
+| `Controllers/` | REST endpoints (`SanctionsController`, `SearchController`, `CountryController`, `LoggerController`) |
+| `Queries/` | MediatR query definitions (`GetFreeTextSearchQuery`, `GetSanctionsByCountryQuery`, `GetQueriesPagedQuery`, `GetErrorCountQuery`, etc.) |
 | `Commands/` | MediatR query/command handlers |
 | `Presentation/GenericDTO/` | Shared response shapes (`PagedResult<T>`) and Facet-mapped DTOs |
 
