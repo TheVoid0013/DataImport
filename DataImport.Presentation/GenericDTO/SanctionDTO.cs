@@ -25,9 +25,12 @@ namespace DataImport.Presentation.GenericDTO
     /// </summary>
     [Facet(typeof(DataImportLog))]
     public partial class ImportLogDto { }
-    
+
     [Facet(typeof(SanctionDetail), exclude: nameof(SanctionDetail.Id))]
-    public partial class FreeTextSearchResultDto { }
+    public partial class FreeTextSearchResultDto
+    {
+        public double MatchScore { get; set; }
+    }
     
     public class FreeTextSearchResponseDto
     {

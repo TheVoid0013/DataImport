@@ -1,4 +1,5 @@
 using DataImport.API.Configuration;
+using DataImport.API.Services;
 using DataImport.API.Queries; // wherever GetSanctionByIdQuery lives
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,8 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+builder.Services.AddSingleton<INameSimilarityScorer, NGramCosineSimilarityScorer>();
 
 
 var app = builder.Build();
