@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using DataImport.API.Queries;
+using DataImport.Commands.Queries;
 
 namespace DataImport.API.Controllers
 {

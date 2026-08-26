@@ -1,6 +1,6 @@
 using DataImport.API.Configuration;
-using DataImport.API.Services;
-using DataImport.API.Queries; // wherever GetSanctionByIdQuery lives
+using DataImport.Commands.Services;
+using DataImport.Commands.Queries; // wherever GetSanctionByIdQuery lives
 
 var builder = WebApplication.CreateBuilder(args);
 

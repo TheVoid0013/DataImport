@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-
+using DataImport.Commands.Queries;
+    
 namespace DataImport.API.Controllers
 {
 
@@ -19,7 +20,7 @@ namespace DataImport.API.Controllers
             CancellationToken ct = default)
         {
             var result = await mediator.Send(
-                new Queries.GetQueriesPagedQuery(page, pageSize, orderByDescending), ct);
+                new GetQueriesPagedQuery(page, pageSize, orderByDescending), ct);
             return Ok(result);
         }
 
@@ -28,7 +29,7 @@ namespace DataImport.API.Controllers
         [Route("error-count")]
         public async Task<IActionResult> GetErrorCount(CancellationToken ct = default)
         {
-            var result = await mediator.Send(new Queries.GetErrorCountQuery(), ct);
+            var result = await mediator.Send(new GetErrorCountQuery(), ct);
             return Ok(result);
         }
     }

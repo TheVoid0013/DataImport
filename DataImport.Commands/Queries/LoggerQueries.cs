@@ -1,7 +1,7 @@
 ﻿using DataImport.Presentation.GenericDTO;
 using MediatR;
 
-namespace DataImport.API.Queries;
+namespace DataImport.Commands.Queries;
 
 public record GetQueriesPagedQuery(
     int Page = 1,

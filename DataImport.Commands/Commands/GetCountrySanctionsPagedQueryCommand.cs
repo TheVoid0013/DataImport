@@ -1,12 +1,12 @@
 using DataImport.Data.Data;
 using DataImport.Presentation.GenericDTO;
-using Facet.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using DataImport.API.Queries;
 using ZiggyCreatures.Caching.Fusion;
+using Facet.Extensions;
+using DataImport.Commands.Queries;
 
-namespace DataImport.API.Commands;
+namespace DataImport.Commands.Commands;
 
 public class GetCountrySanctionsPagedQueryHandler
     : IRequestHandler<GetCountrySanctionsPagedQuery, PagedResult<SanctionListItemDto>>

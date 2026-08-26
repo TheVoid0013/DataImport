@@ -1,4 +1,4 @@
-using DataImport.API.Queries;
+using DataImport.Commands.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

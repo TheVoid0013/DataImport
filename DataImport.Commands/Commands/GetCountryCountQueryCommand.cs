@@ -1,10 +1,10 @@
-using DataImport.API.Queries;
+using DataImport.Commands.Queries;
 using DataImport.Data.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ZiggyCreatures.Caching.Fusion;
 
-namespace DataImport.API.Commands;
+namespace DataImport.Commands.Commands;
 
 public record CountryCountResult(bool Success, String Country, int Count);
 
