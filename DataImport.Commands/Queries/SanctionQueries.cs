@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using DataImport.Presentation.GenericDTO;
 
-namespace DataImport.API.Queries;
+namespace DataImport.Commands.Queries;
 
 public record GetSanctionByIdQuery(string Id)
     : IRequest<SanctionDetailDto?>;

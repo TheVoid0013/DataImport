@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using MediatR;
-using DataImport.API.Queries;
+using DataImport.Commands.Queries;
 
-namespace DataImport.API.Commands.Helper;
+namespace DataImport.Commands.Commands.Helper;
 
 public class SanitizeSearchTermsQueryCommand : IRequestHandler<SanitizeSearchTermsQuery, string[]>
 {

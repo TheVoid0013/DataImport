@@ -1,4 +1,4 @@
-﻿using DataImport.API.Queries;
+﻿using DataImport.Commands.Queries;
 using DataImport.Data.Data;
 using DataImport.Presentation.GenericDTO;
 using Facet.Extensions;

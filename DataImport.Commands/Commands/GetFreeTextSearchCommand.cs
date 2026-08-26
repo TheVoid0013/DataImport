@@ -1,5 +1,6 @@
-using DataImport.API.Queries;
-using DataImport.API.Services;
+using DataImport.Commands.Queries;
+
+using DataImport.Commands.Services;
 using DataImport.Data.Data;
 using DataImport.Data.Models;
 using DataImport.Presentation.GenericDTO;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using ZiggyCreatures.Caching.Fusion;
 using LinqKit;
 
-namespace DataImport.API.Commands;
+namespace DataImport.Commands.Commands;
 
 public class GetFreeTextSearchQueryHandler
     : IRequestHandler<GetFreeTextSearchQuery, FreeTextSearchResponseDto>

@@ -5,7 +5,7 @@ using DataImport.Presentation.GenericDTO;
 using Facet.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using DataImport.API.Queries;
+using DataImport.Commands.Queries;
 
 public class GetErrorCountQueryCommand : IRequestHandler<GetErrorCountQuery, object>
 {

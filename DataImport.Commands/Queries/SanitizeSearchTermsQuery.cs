@@ -1,5 +1,5 @@
 using MediatR;
 
-namespace DataImport.API.Queries;
+namespace DataImport.Commands.Queries;
 
 public record SanitizeSearchTermsQuery(string Name) : IRequest<string[]>;

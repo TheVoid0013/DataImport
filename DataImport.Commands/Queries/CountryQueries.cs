@@ -2,7 +2,7 @@ using MediatR;
 using DataImport.Data.Enums;
 using DataImport.Presentation.GenericDTO;
 
-namespace DataImport.API.Queries;
+namespace DataImport.Commands.Queries;
 
 
 public record CountryCountRequest(Country country);
@@ -14,5 +14,5 @@ public record GetCountrySanctionsPagedQuery(
         int Page = 1
     ) : IRequest<PagedResult<SanctionListItemDto>>;
 
-public record GetCountryCountQuery(Country country) : IRequest<DataImport.API.Commands.CountryCountResult>;
+public record GetCountryCountQuery(Country country) : IRequest<DataImport.Commands.Commands.CountryCountResult>;
 
