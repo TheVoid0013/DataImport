@@ -1,12 +1,9 @@
+using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
-
 namespace DataImport.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class CountryController : ControllerBase
+[Route("api/v{version:apiVersion}/[controller]")]
+public class CountryController : ApiControllerBasev1
 {
     private readonly IMediator _mediator;
 
