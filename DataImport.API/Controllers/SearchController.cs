@@ -1,20 +1,17 @@
+using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
 
 namespace DataImport.API.Controllers
 {
-    [ApiController]
-    [Route("api/Search")]
-    public class SearchController : ControllerBase
+    [Route("api/v{version:apiVersion}/Search")]
+    public class SearchController : ApiControllerBasev1
     {
         private readonly IMediator _mediator;
-
         public SearchController(IMediator mediator)
         {
             _mediator = mediator;
         }
-        
+
         [HttpPost(Name = "Search-Records")]
         public async Task<IActionResult> GetSearchRecords(
             [FromBody] SearchRequest request,
@@ -26,9 +23,6 @@ namespace DataImport.API.Controllers
             var result = await _mediator.Send(
                 new GetFreeTextSearchQuery(request.Name),
                 ct);
-
-            if (result is null || result.TotalCount == 0)
-                return NotFound();
 
             return Ok(result);
         }

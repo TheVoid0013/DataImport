@@ -1,12 +1,11 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
 
 namespace DataImport.API.Controllers
 {
-    [ApiController]
-    [Route("api/sanctions")]
-    public class SanctionsController : ControllerBase
+
+    [Route("api/v{version:apiVersion}/sanctions")]
+    public class SanctionsController : ApiControllerBasev1
     {
         private readonly IMediator _mediator;
 

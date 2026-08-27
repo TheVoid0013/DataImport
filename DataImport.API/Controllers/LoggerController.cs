@@ -1,13 +1,12 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿
+using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
     
 namespace DataImport.API.Controllers
 {
-
-    [ApiController]
-    [Route("api/logger")]
-    public class LoggerController : ControllerBase
+    
+    [Route("api/v{version:apiVersion}/logger")]
+    public class LoggerController : ApiControllerBasev1
     {
         private readonly IMediator mediator;
         public LoggerController(IMediator mediator) => this.mediator = mediator;
