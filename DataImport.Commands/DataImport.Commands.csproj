@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+            <PackageReference Include="MediatR" />
+        <PackageReference Include="ZiggyCreatures.FusionCache" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference Include="F23.StringSimilarity" />
+        <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" />
+        
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
+      <ProjectReference Include="..\DataImport.Presentation\DataImport.Presentation.csproj" />
+    </ItemGroup>
+
+    
+</Project>
