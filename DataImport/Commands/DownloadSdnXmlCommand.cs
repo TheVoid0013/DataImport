@@ -1,5 +1,6 @@
 ﻿using DataImport.Configuration;
 using MediatR;
+using MethodTimer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -37,6 +38,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
+        [Time]
         public async Task<SdnXmlDownloadResult> Handle(DownloadSdnXmlCommand request, CancellationToken cancellationToken)
         {
             var todayFolder = GetTodayFolder();

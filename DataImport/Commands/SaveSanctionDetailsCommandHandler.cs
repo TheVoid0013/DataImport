@@ -1,6 +1,7 @@
 ﻿using DataImport.Data.Data;
 using DataImport.Data.Models;
 using MediatR;
+using MethodTimer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,7 @@ namespace DataImport.Commands
 
     public record SaveSanctionDetailsResult(int Inserted, int Updated, int Unchanged);
 
+
     public class SaveSanctionDetailsCommandHandler : IRequestHandler<SaveSanctionDetailsCommand, SaveSanctionDetailsResult>
     {
         private const int BatchSize = 500;
@@ -28,6 +30,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
+        [Time]
         public async Task<SaveSanctionDetailsResult> Handle(SaveSanctionDetailsCommand request, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Loading existing SDN records for comparison...");

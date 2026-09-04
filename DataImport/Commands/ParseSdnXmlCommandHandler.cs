@@ -1,6 +1,7 @@
 ﻿using System.Xml.Linq;
 using DataImport.Data.Models;
 using MediatR;
+using MethodTimer;
 using Microsoft.Extensions.Logging;
 
 namespace DataImport.Commands
@@ -9,6 +10,7 @@ namespace DataImport.Commands
     /// Parses raw SDN.XML into individual SanctionDetail records — one per &lt;sdnEntry&gt;.
     /// </summary>
     public record ParseSdnXmlCommand(Stream RawXml) : IRequest<List<SanctionDetail>>;
+
 
     public class ParseSdnXmlCommandHandler : IRequestHandler<ParseSdnXmlCommand, List<SanctionDetail>>
     {
@@ -25,6 +27,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
+        [Time]
         public Task<List<SanctionDetail>> Handle(ParseSdnXmlCommand request, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Parsing SDN XML ({Length} bytes)...", request.RawXml.Length);

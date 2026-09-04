@@ -5,6 +5,8 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using DataImport.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace DataImport.Hosting;
 
@@ -27,7 +29,9 @@ internal static class ImportRunner
             Log.Information("=== OFAC SDN import starting ===");
 
             using var host = BuildHost(args);
+            MethodTimeLogger.Configure(host.Services.GetRequiredService<ILoggerFactory>());
             var mediator = host.Services.GetRequiredService<IMediator>();
+
 
             var result = await RunWithRetryAsync(mediator);
 

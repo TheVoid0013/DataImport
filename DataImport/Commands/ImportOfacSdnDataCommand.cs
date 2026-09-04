@@ -3,12 +3,14 @@ using DataImport.Data.Models;
 using DataImport.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MethodTimer;
 
 namespace DataImport.Commands
 {
     public record ImportOfacSdnDataCommand : IRequest<ImportOfacSdnDataResult>;
 
     public record ImportOfacSdnDataResult(int TotalParsed, int Inserted, int Updated, int Unchanged);
+
 
     public class ImportOfacSdnDataCommandHandler : IRequestHandler<ImportOfacSdnDataCommand, ImportOfacSdnDataResult>
     {
@@ -29,6 +31,7 @@ namespace DataImport.Commands
             _notifier = notifier;
         }
 
+        [Time]
         public async Task<ImportOfacSdnDataResult> Handle(ImportOfacSdnDataCommand request, CancellationToken cancellationToken)
         {
             var log = new DataImportLog { RanAtUtc = DateTime.UtcNow };
