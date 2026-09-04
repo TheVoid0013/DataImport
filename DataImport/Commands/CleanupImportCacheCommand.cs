@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Globalization;
+using MethodTimer;
 
 namespace DataImport.Commands
 {
@@ -26,6 +27,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
+        [Time]
         public Task<int> Handle(CleanupImportCacheCommand request, CancellationToken cancellationToken)
         {
             if (_importSettings.CacheRetentionDays <= 0)

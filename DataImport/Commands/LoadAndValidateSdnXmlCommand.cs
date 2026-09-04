@@ -1,10 +1,12 @@
 ﻿using System.Xml.Linq;
 using MediatR;
+using MethodTimer;
 using Microsoft.Extensions.Logging;
 
 namespace DataImport.Commands
 {
     public record LoadAndValidateSdnXmlCommand(Stream RawXml) : IRequest<Stream>;
+
 
     public class LoadAndValidateSdnXmlCommandHandler
         : IRequestHandler<LoadAndValidateSdnXmlCommand, Stream>
@@ -28,6 +30,7 @@ namespace DataImport.Commands
             _logger = logger;
         }
 
+        [Time]
         public Task<Stream> Handle(
             LoadAndValidateSdnXmlCommand request,
             CancellationToken cancellationToken)

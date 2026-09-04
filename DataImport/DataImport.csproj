@@ -35,6 +35,10 @@
 
 		<PackageReference Include="MediatR" />
 
+		<PackageReference Include="Fody"/>
+		<PackageReference Include="MethodTimer.Fody"/>
+		
+
 	</ItemGroup>
 
 	<ItemGroup>
