@@ -1,5 +1,6 @@
 using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
+using DataImport.Data.Enums;   // <-- add this
 
 namespace DataImport.API.Controllers;
 
@@ -7,6 +8,7 @@ namespace DataImport.API.Controllers;
 public class CountryController : ApiControllerBasev1
 {
     private readonly IMediator _mediator;
+
     public CountryController(IMediator mediator)
     {
         _mediator = mediator;
@@ -15,30 +17,29 @@ public class CountryController : ApiControllerBasev1
     [HttpPost]
     [Route("get-count-by-country")]
     public async Task<IActionResult> GetCountryCount(
-        [FromQuery] GetCountryCountQuery request,
+        [FromQuery] Country country,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request?.country.ToString()))
-            return BadRequest("Country name is required");
+        if (!Enum.IsDefined(typeof(Country), country))
+            return BadRequest("Valid country is required");
 
-        var result = await _mediator.Send(
-            new GetCountryCountQuery(request.country),
-            ct);
-
+        var result = await _mediator.Send(new GetCountryCountQuery(country), ct);
         return Ok(result);
     }
 
     [HttpPost]
     [Route("get-sanctions-by-country")]
     public async Task<IActionResult> GetCountrySanctionsPaged(
-        [FromQuery] GetCountrySanctionsPagedQuery request,
-        CancellationToken ct)
+        [FromQuery] Country country,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] int page = 1,
+        CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(request?.country.ToString()))
-            return BadRequest("Country name is required");
+        if (!Enum.IsDefined(typeof(Country), country))
+            return BadRequest("Valid country is required");
 
         var result = await _mediator.Send(
-            new GetCountrySanctionsPagedQuery(request.country),
+            new GetCountrySanctionsPagedQuery(country, pageSize, page),
             ct);
 
         return Ok(result);
