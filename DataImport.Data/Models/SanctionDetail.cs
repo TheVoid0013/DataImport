@@ -9,6 +9,7 @@ namespace DataImport.Data.Models
 {
     [Index(nameof(RecordUniqueId), IsUnique = true)]
     [Index(nameof(SdnType), nameof(LastName))]
+    [Index(nameof(IsActive), nameof(SdnType), nameof(LastName))]
     [Table("SanctionDetails")]
     public class SanctionDetail
     {
@@ -36,6 +37,14 @@ namespace DataImport.Data.Models
         [Required]
         [StringLength(20)]
         public string SdnType { get; set; } = null!;
+        public bool IsActive { get; set; } = true;
+
+        public DateTime? RemovedAtUtc { get; set; }
+
+        public DateTime LastSeenAtUtc { get; set; } = DateTime.UtcNow;
+        
+        [StringLength(64)]
+        public string? ContentHash { get; set; }
 
     }
 }
