@@ -1,0 +1,60 @@
+using DataImport.Data.Data;
+using DataImport.Presentation.GenericDTO;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using ZiggyCreatures.Caching.Fusion;
+using Facet.Extensions;
+using DataImport.Commands.Queries;
+
+namespace DataImport.Commands.Commands;
+
+public class GetDelistedCountrySanctionsPagedQueryHandler
+    : IRequestHandler<GetDelistedCountrySanctionsPagedQuery, PagedResult<SanctionListItemDto>>
+{
+    private readonly SanctionsDbContext _db;
+    private readonly IFusionCache _cache;
+
+    public GetDelistedCountrySanctionsPagedQueryHandler(SanctionsDbContext db, IFusionCache cache)
+    {
+        _db = db;
+        _cache = cache;
+    }
+
+    public async Task<PagedResult<SanctionListItemDto>> Handle(
+        GetDelistedCountrySanctionsPagedQuery request, CancellationToken ct)
+    {
+        var countryName = request.country.ToString();
+
+        // "Delisted" prefix keeps this from colliding with the active-sanctions cache key
+        var cacheKey = $"DelistedCountrySanctionsPaged_{countryName}_{request.Page}_{request.PageSize}";
+
+        return await _cache.GetOrSetAsync<PagedResult<SanctionListItemDto>>(
+            cacheKey,
+            async _ =>
+            {
+                var query = _db.SanctionDetails
+                    .AsNoTracking()
+                    .Where(x => x.Country == countryName && !x.IsActive); // adjust to your delist field
+
+                var total = await query.CountAsync(ct);
+
+                var items = await query
+                    .OrderBy(x => x.Id)
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(x => x.ToFacet<SanctionListItemDto>())
+                    .ToListAsync(ct);
+
+                return new PagedResult<SanctionListItemDto>(
+                    items,
+                    request.Page,
+                    request.PageSize,
+                    total,
+                    (int)Math.Ceiling(total / (double)request.PageSize)
+                );
+            },
+            options => options.SetDuration(TimeSpan.FromMinutes(5)),
+            ct
+        );
+    }
+}

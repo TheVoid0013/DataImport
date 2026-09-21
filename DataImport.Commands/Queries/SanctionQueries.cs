@@ -13,6 +13,14 @@ public record GetSanctionsPagedQuery(
     string? LastNameContains = null
 ) : IRequest<PagedResult<SanctionListItemDto>>;
 
+public record GetDelistedSanctionsPagedQuery(
+    int Page = 1,
+    int PageSize = 20,
+    string? SdnType = null,
+    string? LastNameContains = null
+) : IRequest<PagedResult<SanctionListItemDto>>;
+
+
 public record SearchRequest(string Name);
 
 // Added a normal Tolerance as it is not optimized yet.

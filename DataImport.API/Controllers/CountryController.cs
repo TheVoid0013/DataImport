@@ -1,9 +1,11 @@
 using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
-using DataImport.Data.Enums;   // <-- add this
+using DataImport.Data.Enums;
+using DataImport.API.Filters;
 
 namespace DataImport.API.Controllers;
 
+[ValidateEnums]
 [Route("api/v{version:apiVersion}/[controller]")]
 public class CountryController : ApiControllerBasev1
 {
@@ -14,33 +16,51 @@ public class CountryController : ApiControllerBasev1
         _mediator = mediator;
     }
 
-    [HttpPost]
-    [Route("get-count-by-country")]
+    [HttpGet("get-count-by-country")]
     public async Task<IActionResult> GetCountryCount(
         [FromQuery] Country country,
         CancellationToken ct)
     {
-        if (!Enum.IsDefined(typeof(Country), country))
-            return BadRequest("Valid country is required");
-
         var result = await _mediator.Send(new GetCountryCountQuery(country), ct);
         return Ok(result);
     }
 
-    [HttpPost]
-    [Route("get-sanctions-by-country")]
+    [HttpGet("get-delisted-count-by-country")]
+    public async Task<IActionResult> GetDelistedCountByCountry(
+        [FromQuery] Country country,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetCountryDelistedCountQuery(country), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("get-sanctions-by-country")]
     public async Task<IActionResult> GetCountrySanctionsPaged(
         [FromQuery] Country country,
         [FromQuery] int pageSize = 20,
         [FromQuery] int page = 1,
         CancellationToken ct = default)
     {
-        if (!Enum.IsDefined(typeof(Country), country))
-            return BadRequest("Valid country is required");
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        page = Math.Max(page, 1);
 
         var result = await _mediator.Send(
-            new GetCountrySanctionsPagedQuery(country, pageSize, page),
-            ct);
+            new GetCountrySanctionsPagedQuery(country, pageSize, page), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("get-delisted-sanctions-by-country")]
+    public async Task<IActionResult> GetDelistedCountrySanctionsPaged(
+        [FromQuery] Country country,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] int page = 1,
+        CancellationToken ct = default)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        page = Math.Max(page, 1);
+
+        var result = await _mediator.Send(
+            new GetDelistedCountrySanctionsPagedQuery(country, pageSize, page), ct);
 
         return Ok(result);
     }
