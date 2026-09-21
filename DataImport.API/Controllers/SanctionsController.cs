@@ -33,5 +33,20 @@ namespace DataImport.API.Controllers
                 new GetSanctionsPagedQuery(page, pageSize, sdnType, lastNameContains), ct);
             return Ok(result);
         }
+        
+        [HttpGet("Paged-delisted-Sanctions")]
+        public async Task<IActionResult> GetDelistedPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sdnType = null,
+            [FromQuery] string? lastNameContains = null,
+            CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(
+                new GetDelistedSanctionsPagedQuery(page, pageSize, sdnType, lastNameContains), ct);
+            return Ok(result);
+        }
+        
+        
     }
 }
