@@ -16,3 +16,5 @@ public record GetCountrySanctionsPagedQuery(
 
 public record GetCountryCountQuery(Country country) : IRequest<DataImport.Commands.Commands.CountryCountResult>;
 
+public record GetCountryDelistedCountQuery(Country country) : IRequest<DataImport.Commands.Commands.CountryCountResult>;
+

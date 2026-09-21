@@ -1,6 +1,6 @@
 using DataImport.API.Controllers.BaseController;
 using DataImport.Commands.Queries;
-using DataImport.Data.Enums;   // <-- add this
+using DataImport.Data.Enums;
 
 namespace DataImport.API.Controllers;
 
@@ -24,6 +24,21 @@ public class CountryController : ApiControllerBasev1
             return BadRequest("Valid country is required");
 
         var result = await _mediator.Send(new GetCountryCountQuery(country), ct);
+        return Ok(result);
+    }
+
+
+    [HttpPost]
+    [Route("get-delisted-count-by-country")]
+    public async Task<IActionResult> GetDelistedCountByCountry(
+        [FromQuery] Country country,
+        CancellationToken ct
+        )
+    {
+        if (!Enum.IsDefined(typeof(Country), country))
+            return BadRequest("Valid country is required");
+
+        var result= await _mediator.Send(new GetCountryDelistedCountQuery(country), ct);
         return Ok(result);
     }
 
