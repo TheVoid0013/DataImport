@@ -21,12 +21,20 @@ internal static class HostApplicationBuilderExtensions
     public static HostApplicationBuilder AddSanctionsDbContext(this HostApplicationBuilder builder)
     {
         var connectionString = builder.Configuration.GetConnectionString("SanctionsDb");
+        
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                "ConnectionStrings:SanctionsDb is not set. Use user-secrets or the ConnectionStrings__SanctionsDb environment variable.");
 
         builder.Services.AddDbContext<SanctionsDbContext>(options =>
             options.UseSqlServer(connectionString, sql =>
             {
                 sql.CommandTimeout(180);
-                sql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null
+                    );
             }));
 
         return builder;

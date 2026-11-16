@@ -15,7 +15,10 @@ namespace DataImport.API.Configuration
             IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("SanctionsDb");
-
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException(
+                    "ConnectionStrings:SanctionsDb is not set. Use user-secrets or the ConnectionStrings__SanctionsDb environment variable.");
+            
             services.AddDbContext<SanctionsDbContext>(options =>
                 options.UseSqlServer(
                     connectionString,
