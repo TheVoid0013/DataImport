@@ -53,27 +53,29 @@ internal static class ImportRunner
         }
     }
 
-    private static async Task<ImportOfacSdnDataResult> RunWithRetryAsync(IMediator mediator)
+    internal static async Task<ImportOfacSdnDataResult> RunWithRetryAsync(
+        IMediator mediator,
+        int maxAttempts = MaxAttempts,
+        TimeSpan? retryDelay = null)
     {
-        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        var delay = retryDelay ?? RetryDelay;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             try
             {
                 return await mediator.Send(new ImportOfacSdnDataCommand());
             }
-            catch (Exception ex) when (attempt < MaxAttempts)
+            catch (Exception ex) when (attempt < maxAttempts)
             {
                 Log.Warning(ex,
                     "Import attempt {Attempt}/{MaxAttempts} failed. Retrying in {Delay}...",
-                    attempt, MaxAttempts, RetryDelay);
+                    attempt, maxAttempts, delay);
 
-                await Task.Delay(RetryDelay);
+                await Task.Delay(delay);
             }
         }
 
-        // Unreachable in practice: the loop either returns or the last attempt's
-        // exception propagates naturally since the `when (attempt < MaxAttempts)`
-        // filter won't catch on the final try.
         throw new InvalidOperationException("Retry loop exited unexpectedly.");
     }
 
