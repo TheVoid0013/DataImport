@@ -1,124 +1,81 @@
-# DataImport — OFAC SDN Sanctions Platform
+# DataImport
 
-A .NET solution for ingesting and serving U.S. Treasury OFAC Specially
-Designated Nationals (SDN) sanctions data. It's made up of two projects
-sharing the same SQL Server database and domain models:
+A .NET 10 ETL and sanctions-screening API. It imports the OFAC SDN list into SQL Server, keeps it in sync (including delistings), and exposes fuzzy name search for AML/KYC screening.
 
-| Project | Type | Responsibility |
-|---|---|---|
-| **DataImport** | Console app | Downloads, parses, and upserts SDN data (ETL) |
-| **DataImport.API** | ASP.NET Core Web API | Exposes sanctions data, import logs, and search via REST endpoints |
+## Features
 
----
+- **OFAC SDN import pipeline**: XML file integrity validation, then import via per-source `ISanctionImportStrategy` implementations
+- **Idempotent data model**: composite unique index on `(Source, RecordUniqueId)`
+- **Delisting detection**: records missing from the latest file are soft-deleted (`IsActive` / `RemovedAtUtc`), and each import log tracks a `Removed` count
+- **Fuzzy name search**: SQL Server full-text candidates, re-ranked by n-gram cosine similarity with a caller-supplied `Tolerance`
+- **Search term sanitizing**: tiered stripping of legal entity suffixes, generic business descriptors and honorifics before the cache key is built
+- **Caching**: FusionCache
+- **Resilience**: retry on failure, with email notification when an import fails
+- **Scheduled full-text index rebuild**: Coravel, daily at 00:23 (API layer only)
+- **Logging**: Serilog, with a logger endpoint
+- **Swagger UI** for exploring the API
 
-## 1. DataImport — Console Importer
+## Tech stack
 
-A .NET console job that downloads the OFAC SDN list, parses it, and upserts
-it into SQL Server — inserting new entries, updating changed ones, and
-leaving unchanged ones alone. Runs as a scheduled job via Task Scheduler.
-
-Built as a MediatR-orchestrated pipeline of three steps: **download → parse → save**,
-with every run recorded in a `DataImportLogs` table so you have a history of what
-happened, when, and whether it succeeded.
-
-### How it works
-
-```
-Program.cs
-  └─ ImportRunner.RunAsync
-       └─ ImportOfacSdnDataCommand            (orchestrator)
-            ├─ DownloadSdnXmlCommand           → gets today's sdn.xml (cache-first)
-            ├─ ParseSdnXmlCommand              → XDocument → List<SanctionDetail>
-            └─ SaveSanctionDetailsCommand      → batched upsert into SQL Server
-```
-
-1. **Download** — `DownloadSdnXmlCommandHandler` checks for a cached copy of
-   `sdn.xml` under `Imports/yyyy-MM-dd/`. If today's cache exists, it's reused;
-   otherwise the file is streamed straight from OFAC to disk (never buffered
-   fully in memory) and cached for the day. Returns a `Stream` plus a
-   `WasDownloaded` flag so the run history can tell cache hits from real downloads.
-
-2. **Parse** — `ParseSdnXmlCommandHandler` reads the cached file as a `Stream`
-   (via `XDocument.Load`, not `Parse`, so the whole file is never materialized
-   as one in-memory string) and produces one `SanctionDetail` per `<sdnEntry>`.
-
-3. **Save** — `SaveSanctionDetailsCommandHandler` loads all existing records
-   with `AsNoTracking()`, compares each parsed record against them, and
-   batches inserts/updates in groups of 500 — calling `ChangeTracker.Clear()`
-   after each batch so change-tracking cost stays constant instead of growing
-   across the whole run.
-
-4. **Log** — `ImportOfacSdnDataCommandHandler` wraps all three steps in a
-   try/catch/finally and always writes a `DataImportLog` row — even on
-   failure — capturing counts, whether the source was downloaded or cached,
-   success/failure, and the error message if any.
-
-5. **Cache cleanup** — stale day-partitioned cache folders are cleaned up
-   automatically so `Imports/` doesn't grow unbounded across repeated runs.
-
-### Project structure
-
-| Folder | Contents |
+| Area | Tech |
 |---|---|
-| `Commands/` | The three pipeline steps + the orchestrator (MediatR requests/handlers) |
-| `Models/` | `SanctionDetail` (one row per SDN entry), `DataImportLog` (one row per run) |
-| `Data/` | `SanctionsDbContext` + design-time factory for EF migrations |
-| `Configuration/` | `ImportSettings` (cache folder, OFAC URL) — bound from `appsettings.json` |
-| `Extensions/` | DI wiring (DbContext, HttpClient, MediatR, Serilog) |
-| `Hosting/` | `ImportRunner` — builds the host, runs the import, flushes logs |
-| `Logging/` | Serilog bootstrap |
-| `Migrations/` | EF Core migrations |
-| `DataImport.Benchmarks/` | BenchmarkDotNet project comparing SDN parsing/save approaches |
+| Runtime | .NET 10, ASP.NET Core |
+| Data | SQL Server, EF Core (migrations), full-text search |
+| Architecture | MediatR (CQRS) |
+| Search | LinqKit `PredicateBuilder`, F23.StringSimilarity |
+| Caching | FusionCache |
+| Scheduling | Coravel |
+| Logging | Serilog |
 
----
+## API
 
-## 2. DataImport.API — Web App
-
-An ASP.NET Core Web API that exposes the data captured by the importer —
-sanction records, import run logs, country-level breakdowns, and fuzzy
-name search — over REST endpoints. Built on the same MediatR command/query
-pattern as the importer, against the same `SanctionsDbContext` / SQL Server
-database. Documented via Swagger/OpenAPI for exploration and downstream
-integration.
-
-### Endpoints (current)
-
-| Method | Route | Description |
-|---|---|---|
-| `GET` | `/api/sanctions` | Paged list of sanction records (`page`, `pageSize`, `sdnType`, `lastNameContains`) |
-| `GET` | `/api/sanctions/{id}` | Get a single sanction record by ID |
-| `POST` | `/api/Search` | Fuzzy name search over sanction records — SQL full-text candidate retrieval, re-ranked by n-gram cosine similarity (body: `{ "name": string }`) |
-| `POST` | `/api/Country/get-count-by-country` | Count of sanctioned records for a given country |
-| `POST` | `/api/Country/get-sanctions-by-country` | Paged list of sanction records for a given country (`page`, `pageSize`) |
-| `GET` | `/api/logger` | Paged list of import runs (`page`, `pageSize`, `orderByDescending`) |
-| `GET` | `/api/logger/error-count` | Count of failed import runs |
-
-### Project structure
-
-| Folder | Contents |
+| Controller | Purpose |
 |---|---|
-| `Controllers/` | REST endpoints (`SanctionsController`, `SearchController`, `CountryController`, `LoggerController`) |
-| `Queries/` | MediatR query definitions (`GetFreeTextSearchQuery`, `GetSanctionsByCountryQuery`, `GetQueriesPagedQuery`, `GetErrorCountQuery`, etc.) |
-| `Commands/` | MediatR query/command handlers |
-| `Presentation/GenericDTO/` | Shared response shapes (`PagedResult<T>`) and Facet-mapped DTOs |
+| **Sanctions** | Get a record by id; paged list with `sdnType` and `lastNameContains` filters |
+| **Search** | `POST` free-text fuzzy name search (multi-word, OR logic, scored by `Tolerance`) |
+| **Country** | Count and list records by country |
+| **Logger** | Read import/application logs |
 
----
+Full request/response shapes are in Swagger at `/swagger` when running locally.
 
-## 3. Benchmarks
+## Getting started
 
-`DataImport.Benchmarks` uses BenchmarkDotNet to compare parsing/save strategy
-approaches. Run with:
+### Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server with **Full-Text Search** installed
+- `dotnet-ef` tool: `dotnet tool install --global dotnet-ef`
+
+### Setup
+
 ```bash
-cd DataImport.Benchmarks
-dotnet run -c Release
+git clone https://github.com/TheVoid0013/DataImport.git
+cd DataImport
+
+# 1. Set your connection string (appsettings.Development.json or user-secrets)
+# 2. Apply migrations (creates tables and the full-text index)
+dotnet ef database update --project DataImport.API
+
+# 3. Run
+dotnet run --project DataImport.API
 ```
-____
 
-## Requirements
+Then open `https://localhost:<port>/swagger`.
 
-- .NET 10 SDK
-- SQL Server (local or remote) — Developer/Express/etc. all work
-- Network access to the OFAC SDN.XML endpoint (importer only)
+### Linux notes
 
+Runs on Ubuntu. Watch for case-sensitive file names, SQL authentication (no Windows auth), and the `dotnet-ef` tool being on your `PATH`.
 
-### If you want to contribute, create descriptive pull request and let me know.
+## Roadmap
+
+- Admin dashboard (React + Vite + TypeScript, TailAdmin)
+- Aggregate endpoints for dashboard charts (top countries, SDN type counts)
+- GitHub wiki with full endpoint documentation
+
+## Contributing
+
+`master` is protected: open a pull request, no direct pushes.
+
+## Disclaimer
+
+This project is a personal engineering project. It is not a certified compliance product, so validate results independently before relying on them for regulatory decisions.
