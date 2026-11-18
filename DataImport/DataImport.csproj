@@ -9,8 +9,8 @@
 		<AnalysisLevel>latest</AnalysisLevel>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-	  <UserSecretsId>87a5ed00-f2a3-4f57-b4c2-3b58b4a1c59b</UserSecretsId>
-  </PropertyGroup>
+		<UserSecretsId>87a5ed00-f2a3-4f57-b4c2-3b58b4a1c59b</UserSecretsId>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
@@ -38,12 +38,16 @@
 
 		<PackageReference Include="Fody" />
 		<PackageReference Include="MethodTimer.Fody" />
-		
+
 
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
+		<ProjectReference Include="..\DataImport.Data\DataImport.Data.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="DataImport.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>

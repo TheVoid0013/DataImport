@@ -5,5 +5,6 @@
   <Project Path="DataImport.Commands/DataImport.Commands.csproj" />
   <Project Path="DataImport.Data/DataImport.Data.csproj" Id="02f262c7-f7c8-430e-84fb-47ac36d3a484" />
   <Project Path="DataImport.Presentation/DataImport.Presentation.csproj" Id="b3365877-c343-4118-a7a1-2b67f6453d97" />
+  <Project Path="DataImport.Tests\DataImport.Tests.csproj" />
   <Project Path="DataImport/DataImport.csproj" />
 </Solution>
