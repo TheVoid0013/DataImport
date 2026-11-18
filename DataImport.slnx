@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="DataImport.API.Tests/DataImport.API.Tests.csproj" />
   <Project Path="DataImport.API/DataImport.API.csproj" Id="8dcfd1ed-a17f-4086-807e-f217ef73b3a7" />
   <Project Path="DataImport.Benchmarks/DataImport.Benchmarks.csproj" Id="3dccf1f6-78d4-4f25-abd4-7b1d791d05ca" />
   <Project Path="DataImport.Commands/DataImport.Commands.csproj" />
