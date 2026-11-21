@@ -30,8 +30,8 @@ internal static class ImportRunner
 
             using var host = BuildHost(args);
             MethodTimeLogger.Configure(host.Services.GetRequiredService<ILoggerFactory>());
-            var mediator = host.Services.GetRequiredService<IMediator>();
-
+            using var scope = host.Services.CreateScope();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
             var result = await RunWithRetryAsync(mediator);
 
